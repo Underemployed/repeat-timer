@@ -29,7 +29,7 @@
             min-height: 100vh;
             transition: background-color 0.4s ease;
             overflow-x: hidden;
-            padding-top: 70px; /* Space for navbar */
+            padding-top: 70px;
         }
 
         /* --- NAVBAR --- */
@@ -271,7 +271,7 @@
         let isPaused = false;
         let isMuted = false;
         let isLoading = true;
-        let workoutSessionActive = false; // Tracks if a workout is mid-progress
+        let workoutSessionActive = false; 
         
         let wakeLock = null;
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -411,7 +411,7 @@
         async function requestPermissionsSoft() {
             if (!("Notification" in window)) return;
             if (Notification.permission === "default") {
-                await Notification.requestPermission(); // Don't block execution if they deny
+                await Notification.requestPermission(); 
             }
             requestWakeLock();
         }
@@ -468,7 +468,6 @@
             if(tracks.length === 0) return alert("Please add at least one track!");
 
             if (!workoutSessionActive) {
-                // FRESH START
                 requestPermissionsSoft();
                 totalLoops = parseInt(document.getElementById('total-loops').value) || 15;
                 currentLoop = 1;
@@ -476,14 +475,17 @@
                 workoutSessionActive = true;
                 document.getElementById('btn-reset').style.display = 'block';
             } else {
-                // RESUMING - Ensure index is still valid in case they deleted tracks
                 if (currentTrackIndex >= tracks.length) currentTrackIndex = tracks.length - 1;
-                if (currentTrackIndex < 0 && tracks.length > 0) currentTrackIndex = 0; // Skip Get Ready if resuming
+                if (currentTrackIndex < 0 && tracks.length > 0) currentTrackIndex = 0; 
                 
-                // Ensure time left doesn't exceed newly edited duration
                 if (currentTrackIndex !== -1 && tracks[currentTrackIndex]) {
                     if (timeLeft > tracks[currentTrackIndex].duration) timeLeft = tracks[currentTrackIndex].duration;
                 }
             }
 
-            // 
+            document.getElementById('setup-section').style.display = 'none';
+            document.getElementById('timer-section').style.display = 'block';
+            document.getElementById('progress-container').style.display = 'block';
+            
+            document.getElementById('nav-github').style.display = 'none';
+       
