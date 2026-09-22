@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Interval Timer</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            transition: background-color 0.3s ease;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        h1 { margin-top: 0; }
+        
+        /* Setup Section */
+        #setup-section { display: block; }
+        .track-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        input, select {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+        }
+        input[type="text"] { flex: 2; }
+        input[type="number"] { flex: 1; width: 60px; }
+        input[type="color"] { flex: 0.5; height: 35px; padding: 2px; }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.2s;
+            margin: 5px;
+        }
+        .btn-add { background: #4CAF50; color: white; width: 100%; margin-top: 10px; }
+        .btn-start { background: #2196F3; color: white; width: 100%; font-size: 20px; padding: 15px; margin-top: 20px;}
+        .btn-pause { background: #FF9800; color: white; }
+        .btn-stop { background: #f44336; color: white; }
+
+        .form-group {
+            margin-top: 20px;
+            text-align: left;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        /* Timer Section */
+        #timer-section { display: none; }
+        #timer-display {
+            font-size: 120px;
+            font-weight: bold;
+            margin: 20px 0;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+        #track-name-display { font-size: 40px; margin-bottom: 10px; }
+        #sets-display { font-size: 24px; opacity: 0.8; }
+        
+        #track-list {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .track-item {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+        }
+        .delete-btn { color: #ff5252; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- SETUP SCREEN -->
+    <div class="container" id="setup-section">
+        <h1>Workout Timer Setup</h1>
+        
+        <div id="tracks-container">
+            <!-- Tracks will be added here -->
+        </div>
+        
+        <button class="btn btn-add" onclick="addTrackInput()">+ Add Another Track</button>
+
+        <div class="form-group">
+            <label for="total-loops"><strong>Total Loops (Reps):</strong></label>
+            <input type="number" id="total-loops" value="15" min="1" style="width: 80px; margin-left: 10px;">
+        </div>
+
+        <button class="btn btn-start" onclick="startWorkout()">START WORKOUT</button>
+
+        <div id="track-list">
+            <h3>Current Tracks:</h3>
+            <div id="track-summary"></div>
+        </div>
+    </div>
+
+    <!-- TIMER SCREEN -->
+    <div class="container" id="timer-section">
+        <div id="sets-display">Set: <span id="current-set">1</span> / <span id="total-sets">30</span></div>
+        <div id="track-name-display">Get Ready!</div>
+        <div id="timer-display">00</div>
+        
+        <div>
+            <button class="btn btn-pause" id="pause-btn" onclick="togglePause()">Pause</button>
+            <button class="btn btn-stop" onclick="stopWorkout()">Stop & Back</button>
+        </div>
+    </div>
+
+    <script>
+        let tracks = [];
+        let totalLoops = 1;
+        
+        // Timer state
+        let currentLoop = 1;
+        let currentTrackIndex = 0;
+        let timeLeft = 0;
+        let timerInterval = null;
+        let isPaused = false;
+
+        // Sound Generator (Web Audio API)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playBeep(frequency, duration) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+            
+            gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        // Setup UI
+        function addTrackInput(name = '', duration = 10, color = '#2196F3') {
+            const container = document.getElementById('tracks-container');
+            const div = document.createElement('div');
+            div.className = 'track-input';
+            
+            div.innerHTML = `
+                <input type="text" placeholder="Name (e.g. Work)" value="${name}" class="t-name">
+                <input type="number" placeholder="Secs" value="${duration}" min="1" class="t-duration">
+                <input type="color" value="${color}" class="t-color">
+                <span class="delete-btn" onclick="this.parentElement.remove(); updateTrackList();">✕</span>
+            `;
+            container.appendChild(div);
+            
+            // Listen for changes to update summary
+            div.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', updateTrackList);
+            });
+            updateTrackList();
+        }
+
+        function updateTrackList() {
+            const inputs = document.querySelectorAll('.track-input');
+            tracks = [];
+            let summaryHTML = '';
+            
+            inputs.forEach(input => {
+                const name = input.querySelector('.t-name').value || 'Track';
+                const duration = parseInt(input.querySelector('.t-duration').value) || 10;
+                const color = input.querySelector('.t-color').value;
+                
+                tracks.push({ name, duration, color });
+                
+                summaryHTML += `
+                    <div class="track-item" style="border-left: 5px solid ${color}">
+                        <span>${name}</span>
+                        <span>${duration}s</span>
+                    </div>`;
+            });
+            
+            document.getElementById('track-summary').innerHTML = summaryHTML;
+        }
+
+        // Initialize with default template (Work + Rest)
+        addTrackInput('Work', 10, '#4CAF50'); // Green
+        addTrackInput('Rest', 5, '#f44336');  // Red
+
+        // Timer Logic
+        function startWorkout() {
+            updateTrackList();
+            if(tracks.length === 0) {
+                alert("Please add at least one track!");
+                return;
+            }
+
+            totalLoops = parseInt(document.getElementById('total-loops').value) || 1;
+            
+            document.getElementById('setup-section').style.display = 'none';
+            document.getElementById('timer-section').style.display = 'block';
+            document.getElementById('total-sets').innerText = totalLoops;
+
+            // Reset States
+            currentLoop = 1;
+            currentTrackIndex = 0;
+            isPaused = false;
+            document.getElementById('pause-btn').innerText = "Pause";
+            
+            loadTrack();
+            
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(tick, 1000);
+            playBeep(600, 0.5); // Initial Start Beep
+        }
+
+        function loadTrack() {
+            const track = tracks[currentTrackIndex];
+            timeLeft = track.duration;
+            
+            document.getElementById('current-set').innerText = currentLoop;
+            document.getElementById('track-name-display').innerText = track.name;
+            document.getElementById('timer-display').innerText = timeLeft;
+            document.body.style.backgroundColor = track.color;
+        }
+
+        function tick() {
+            if (isPaused) return;
+
+            timeLeft--;
+
+            // Countdown beeps (last 3 seconds)
+            if (timeLeft > 0 && timeLeft <= 3) {
+                playBeep(440, 0.2); 
+            }
+
+            if (timeLeft <= 0) {
+                // Next track
+                currentTrackIndex++;
+                
+                // If end of tracks, go to next loop
+                if (currentTrackIndex >= tracks.length) {
+                    currentTrackIndex = 0;
+                    currentLoop++;
+                    
+                    // If end of workout
+                    if (currentLoop > totalLoops) {
+                        finishWorkout();
+                        return;
+                    }
+                }
+                
+                // Play transition sound (Higher pitch)
+                playBeep(880, 0.4);
+                loadTrack();
+            } else {
+                document.getElementById('timer-display').innerText = timeLeft;
+            }
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('pause-btn').innerText = isPaused ? "Resume" : "Pause";
+        }
+
+        function finishWorkout() {
+            clearInterval(timerInterval);
+            document.getElementById('track-name-display').innerText = "Workout Complete!";
+            document.getElementById('timer-display').innerText = "🎉";
+            document.body.style.backgroundColor = "#2196F3"; // Blue win screen
+            playBeep(523.25, 0.2); // C5
+            setTimeout(() => playBeep(659.25, 0.2), 200); // E5
+            setTimeout(() => playBeep(783.99, 0.4), 400); // G5
+        }
+
+        function stopWorkout() {
+            clearInterval(timerInterval);
+            document.body.style.backgroundColor = "var(--bg-color)";
+            document.getElementById('setup-section').style.display = 'block';
+            document.getElementById('timer-section').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+
