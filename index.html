@@ -29,7 +29,7 @@
             min-height: 100vh;
             transition: background-color 0.4s ease;
             overflow-x: hidden;
-            padding-top: 70px;
+            padding-top: 70px; /* Space for navbar */
         }
 
         /* --- NAVBAR --- */
@@ -488,4 +488,137 @@
             document.getElementById('progress-container').style.display = 'block';
             
             document.getElementById('nav-github').style.display = 'none';
-       
+            document.getElementById('nav-controls').style.display = 'flex';
+            
+            document.getElementById('total-sets').innerText = totalLoops;
+            
+            isPaused = false;
+            document.getElementById('nav-pause-btn').innerText = "Pause";
+            
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            
+            loadTrack();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(tick, 1000);
+            
+            if(currentTrackIndex === -1) playBeep(600, 0.5); 
+        }
+
+        function backToSetup() {
+            clearInterval(timerInterval);
+            isPaused = true;
+            
+            document.getElementById('setup-section').style.display = 'block';
+            document.getElementById('timer-section').style.display = 'none';
+            document.getElementById('progress-container').style.display = 'none';
+            
+            document.getElementById('nav-github').style.display = 'flex';
+            document.getElementById('nav-controls').style.display = 'none';
+            
+            document.body.style.backgroundColor = "var(--bg-color)";
+            document.getElementById('btn-start').innerText = "RESUME WORKOUT";
+        }
+
+        function resetWorkout() {
+            clearInterval(timerInterval);
+            workoutSessionActive = false;
+            releaseWakeLock();
+            
+            document.getElementById('btn-start').innerText = "START WORKOUT";
+            document.getElementById('btn-reset').style.display = 'none';
+            document.body.style.backgroundColor = "var(--bg-color)";
+        }
+
+        function loadTrack() {
+            if (currentTrackIndex === -1) {
+                timeLeft = workoutSessionActive && timeLeft > 0 ? timeLeft : 5; 
+                document.getElementById('current-set').innerText = "-";
+                document.getElementById('track-name-display').innerText = "Get Ready!";
+                document.getElementById('timer-display').innerText = formatTime(timeLeft);
+                document.body.style.backgroundColor = "#555555";
+            } else {
+                const track = tracks[currentTrackIndex];
+                if(timeLeft <= 0) timeLeft = track.duration; 
+                
+                document.getElementById('current-set').innerText = currentLoop;
+                document.getElementById('track-name-display').innerText = track.name;
+                document.getElementById('timer-display').innerText = formatTime(timeLeft);
+                document.body.style.backgroundColor = track.color;
+                
+                sendNotification(`Set ${currentLoop}: ${track.name}`, `${formatTime(track.duration)} on the clock.`);
+            }
+            updateProgressBar();
+        }
+
+        function tick() {
+            if (isPaused) return;
+
+            timeLeft--;
+            updateProgressBar();
+
+            if (timeLeft > 0 && timeLeft <= 3) playBeep(440, 0.2); 
+
+            if (timeLeft <= 0) {
+                currentTrackIndex++;
+                
+                if (currentTrackIndex >= tracks.length) {
+                    currentTrackIndex = 0;
+                    currentLoop++;
+                    
+                    if (currentLoop > totalLoops) {
+                        finishWorkout();
+                        return;
+                    }
+                }
+                
+                playBeep(880, 0.4);
+                loadTrack();
+            } else {
+                document.getElementById('timer-display').innerText = formatTime(timeLeft);
+            }
+        }
+
+        function updateProgressBar() {
+            if (currentTrackIndex === -1) {
+                document.getElementById('progress-bar').style.width = (((5 - timeLeft) / 5) * 100) + '%';
+            } else {
+                const track = tracks[currentTrackIndex];
+                if (!track) return;
+                document.getElementById('progress-bar').style.width = (((track.duration - timeLeft) / track.duration) * 100) + '%';
+            }
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('nav-pause-btn').innerText = isPaused ? "Resume" : "Pause";
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById('nav-mute-btn').innerText = isMuted ? "🔇" : "🔊";
+        }
+
+        function finishWorkout() {
+            clearInterval(timerInterval);
+            releaseWakeLock();
+            workoutSessionActive = false;
+            
+            document.getElementById('track-name-display').innerText = "Workout Complete!";
+            document.getElementById('timer-display').innerText = "🎉";
+            document.getElementById('progress-bar').style.width = '100%';
+            
+            // FIXED JAVASCRIPT SYNTAX ERROR HERE
+            document.body.style.backgroundColor = "var(--primary)";
+            
+            document.getElementById('nav-controls').style.display = 'none';
+            document.getElementById('nav-github').style.display = 'flex';
+            
+            sendNotification("Workout Complete!", "Great job!");
+            playBeep(523.25, 0.2); setTimeout(() => playBeep(659.25, 0.2), 200); setTimeout(() => playBeep(783.99, 0.4), 400);
+            
+            document.getElementById('btn-start').innerText = "START WORKOUT";
+            document.getElementById('btn-reset').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
