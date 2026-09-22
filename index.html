@@ -29,7 +29,7 @@
             min-height: 100vh;
             transition: background-color 0.4s ease;
             overflow-x: hidden;
-            padding-top: 70px; /* Space for navbar */
+            padding-top: 70px;
         }
 
         /* --- NAVBAR --- */
@@ -143,7 +143,9 @@
         .btn:hover { filter: brightness(1.1); }
         
         .btn-small { padding: 10px; font-size: 12px; flex: 1; }
-        .btn-normal { padding: 12px 20px; font-size: 16px; margin: 5px; }
+        .btn-normal { padding: 12px 20px; font-size: 16px; }
+        .btn-large { padding: 16px 30px; font-size: 18px; }
+        
         .btn-add { background: #333; border: 1px dashed #666; width: 100%; margin-top: 10px; padding: 15px; color: #aaa;}
         .btn-start { background: var(--success); width: 100%; font-size: 18px; padding: 16px; margin-top: 20px;}
         .btn-reset { background: transparent; border: 1px solid #666; width: 100%; font-size: 14px; padding: 12px; margin-top: 10px; display: none;}
@@ -152,6 +154,7 @@
         .btn-red { background: var(--danger); }
         .btn-orange { background: var(--warning); }
         .btn-dark { background: #333; }
+        .btn-icon { background: rgba(255,255,255,0.15); color: white; padding: 15px; border-radius: 50%; font-size: 20px; }
 
         /* --- LOOPS GROUP --- */
         .form-group {
@@ -177,6 +180,14 @@
         }
         #track-name-display { font-size: 42px; margin-bottom: 5px; font-weight: 700; text-shadow: 1px 2px 6px rgba(0,0,0,0.3); }
         #sets-display { font-size: 20px; margin-bottom: 20px; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 30px; display: inline-block;}
+        
+        #controls-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
 
         /* --- PROGRESS BAR --- */
         #progress-container {
@@ -207,8 +218,7 @@
     <nav class="navbar">
         <div class="nav-brand">⏱️ ProTimer</div>
         <div class="nav-controls" id="nav-controls">
-            <button class="btn btn-orange btn-normal" id="nav-pause-btn" onclick="togglePause()">Pause</button>
-            <button class="btn btn-dark btn-normal" id="nav-mute-btn" onclick="toggleMute()">🔊</button>
+            <button class="btn btn-dark btn-normal" onclick="backToSetup()">⚙️ Edit Setup</button>
         </div>
         <a href="https://github.com/Underemployed/repeat-timer" target="_blank" class="nav-link" id="nav-github">
             ⭐ Star Repo
@@ -254,8 +264,10 @@
         <div id="track-name-display">Get Ready!</div>
         <div id="timer-display">00:00</div>
         
-        <div style="margin-top: 30px;">
-            <button class="btn btn-dark btn-normal" onclick="backToSetup()" style="font-size: 18px; padding: 15px 30px;">⚙️ Edit / Back</button>
+        <!-- Controls moved back to center screen -->
+        <div id="controls-row">
+            <button class="btn btn-orange btn-large" id="main-pause-btn" onclick="togglePause()">Pause Timer</button>
+            <button class="btn btn-icon" id="main-mute-btn" onclick="toggleMute()" title="Toggle Sound">🔊</button>
         </div>
     </div>
 
@@ -380,7 +392,7 @@
             saveStorageData();
         }
 
-        // --- AUDIO ENGINE ---
+        // --- SAFE AUDIO ENGINE ---
         function playBeep(baseFreq, duration, type='sine') {
             if(isMuted) return;
             if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -388,14 +400,17 @@
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
-            const maxVar = (Math.random() * 0.05) + 0.01;
+            // Reduced variance to avoid generating harsh harmonics
+            const maxVar = (Math.random() * 0.02) + 0.01;
             const finalFreq = baseFreq + ((Math.random() * (maxVar * 2) - maxVar) * baseFreq);
             
             osc.type = type;
             osc.frequency.setValueAtTime(finalFreq, audioCtx.currentTime);
             
+            // Speaker-safe envelope for cheap mobile speakers
+            // Gain lowered to 0.08, and attack time increased to 50ms to stop cone snapping
             gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.02);
+            gainNode.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.05);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
             
             osc.connect(gainNode); gainNode.connect(audioCtx.destination);
@@ -487,13 +502,14 @@
             document.getElementById('timer-section').style.display = 'block';
             document.getElementById('progress-container').style.display = 'block';
             
+            // Swap Navbar links
             document.getElementById('nav-github').style.display = 'none';
             document.getElementById('nav-controls').style.display = 'flex';
             
             document.getElementById('total-sets').innerText = totalLoops;
             
             isPaused = false;
-            document.getElementById('nav-pause-btn').innerText = "Pause";
+            document.getElementById('main-pause-btn').innerText = "Pause Timer";
             
             if(audioCtx.state === 'suspended') audioCtx.resume();
             
@@ -556,7 +572,8 @@
             timeLeft--;
             updateProgressBar();
 
-            if (timeLeft > 0 && timeLeft <= 3) playBeep(440, 0.2); 
+            // Shifted down to 500Hz - easier on phone speakers
+            if (timeLeft > 0 && timeLeft <= 3) playBeep(500, 0.25); 
 
             if (timeLeft <= 0) {
                 currentTrackIndex++;
@@ -571,7 +588,8 @@
                     }
                 }
                 
-                playBeep(880, 0.4);
+                // Shifted down to 700Hz
+                playBeep(700, 0.4);
                 loadTrack();
             } else {
                 document.getElementById('timer-display').innerText = formatTime(timeLeft);
@@ -590,12 +608,12 @@
 
         function togglePause() {
             isPaused = !isPaused;
-            document.getElementById('nav-pause-btn').innerText = isPaused ? "Resume" : "Pause";
+            document.getElementById('main-pause-btn').innerText = isPaused ? "Resume Timer" : "Pause Timer";
         }
 
         function toggleMute() {
             isMuted = !isMuted;
-            document.getElementById('nav-mute-btn').innerText = isMuted ? "🔇" : "🔊";
+            document.getElementById('main-mute-btn').innerText = isMuted ? "🔇" : "🔊";
         }
 
         function finishWorkout() {
@@ -606,8 +624,6 @@
             document.getElementById('track-name-display').innerText = "Workout Complete!";
             document.getElementById('timer-display').innerText = "🎉";
             document.getElementById('progress-bar').style.width = '100%';
-            
-            // FIXED JAVASCRIPT SYNTAX ERROR HERE
             document.body.style.backgroundColor = "var(--primary)";
             
             document.getElementById('nav-controls').style.display = 'none';
