@@ -8,6 +8,7 @@
         :root {
             --bg-color: #121212;
             --text-color: #ffffff;
+            --container-bg: rgba(0, 0, 0, 0.6);
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -24,7 +25,7 @@
             overflow-x: hidden;
         }
         .container {
-            background: rgba(0, 0, 0, 0.6);
+            background: var(--container-bg);
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -34,7 +35,34 @@
             position: relative;
             z-index: 2;
         }
-        h1 { margin-top: 0; }
+        h1 { margin-top: 0; margin-bottom: 20px; }
+        
+        /* Preset Manager */
+        .preset-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 8px;
+            align-items: center;
+        }
+        #preset-selector {
+            flex: 2;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+            background: #333;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-small {
+            padding: 10px;
+            font-size: 13px;
+            margin: 0;
+            flex: 1;
+        }
         
         /* Setup Section */
         #setup-section { display: block; }
@@ -58,23 +86,22 @@
         .track-input select.t-color { flex: 1.5; min-width: 0; cursor: pointer; }
         
         .btn {
-            padding: 12px 20px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
             font-weight: bold;
             transition: transform 0.1s, opacity 0.2s;
-            margin: 5px;
             text-transform: uppercase;
         }
         .btn:active { transform: scale(0.96); }
         .btn:hover { opacity: 0.9; }
         
-        .btn-add { background: #333; border: 1px solid #555; color: white; width: 100%; margin-top: 10px; }
+        .btn-normal { padding: 12px 20px; font-size: 16px; margin: 5px; }
+        .btn-add { background: #333; border: 1px solid #555; color: white; width: 100%; margin-top: 10px; padding: 12px; }
         .btn-start { background: #4CAF50; color: white; width: 100%; font-size: 20px; padding: 15px; margin-top: 20px;}
         .btn-pause { background: #FF9800; color: white; }
         .btn-stop { background: #f44336; color: white; }
+        .btn-new { background: #2196F3; color: white; }
         .btn-icon { background: rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 50%; }
 
         /* Fixed Form Group for Loops */
@@ -89,7 +116,6 @@
             justify-content: space-between;
         }
         
-        /* Stop the loop input from stretching */
         #total-loops {
             flex: none;
             width: 70px;
@@ -156,6 +182,13 @@
     <div class="container" id="setup-section">
         <h1>Workout Timer</h1>
         
+        <!-- Preset Manager -->
+        <div class="preset-group">
+            <select id="preset-selector" onchange="changePreset()"></select>
+            <button class="btn btn-small btn-new" onclick="saveAsNewPreset()">Save As New</button>
+            <button class="btn btn-small btn-stop" onclick="deleteCurrentPreset()">Delete</button>
+        </div>
+
         <div id="tracks-container"></div>
         
         <button class="btn btn-add" onclick="addTrackInput()">+ Add Track</button>
@@ -165,7 +198,7 @@
             <input type="number" id="total-loops" value="15" min="1">
         </div>
 
-        <button class="btn btn-start" onclick="startWorkout()">START WORKOUT</button>
+        <button class="btn btn-start btn-normal" onclick="startWorkout()">START WORKOUT</button>
 
         <div id="track-list">
             <div id="track-summary"></div>
@@ -174,13 +207,13 @@
 
     <!-- TIMER SCREEN -->
     <div class="container" id="timer-section">
-        <div id="sets-display">Set <span id="current-set">1</span> of <span id="total-sets">15</span></div>
+        <div id="sets-display">Set <span id="current-set">-</span> of <span id="total-sets">15</span></div>
         <div id="track-name-display">Get Ready!</div>
         <div id="timer-display">00:00</div>
         
         <div id="controls-row">
-            <button class="btn btn-pause" id="pause-btn" onclick="togglePause()">Pause</button>
-            <button class="btn btn-stop" onclick="stopWorkout()">Stop</button>
+            <button class="btn btn-normal btn-pause" id="pause-btn" onclick="togglePause()">Pause</button>
+            <button class="btn btn-normal btn-stop" onclick="stopWorkout()">Stop</button>
             <button class="btn btn-icon" id="mute-btn" onclick="toggleMute()" title="Toggle Sound">🔊</button>
         </div>
     </div>
@@ -193,7 +226,7 @@
         let tracks = [];
         let totalLoops = 15;
         let currentLoop = 1;
-        let currentTrackIndex = 0;
+        let currentTrackIndex = -1; // -1 indicates the "Get Ready" phase
         let timeLeft = 0;
         let timerInterval = null;
         let isPaused = false;
@@ -214,37 +247,115 @@
             { name: "Teal (Steady)", hex: "#00BCD4" }
         ];
 
-        // --- COOKIE MANAGEMENT ---
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                let date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
+        // --- PRESET & LOCAL STORAGE MANAGEMENT ---
+        let allPresets = {};
+        let currentPresetName = "";
+
+        const defaultPresetData = {
+            loops: 15,
+            tracks: [
+                { name: "Work", duration: 10, color: "#4CAF50" },
+                { name: "Rest", duration: 5, color: "#F44336" }
+            ]
+        };
+
+        function loadStorageData() {
+            try {
+                const storedPresets = localStorage.getItem('workoutTimerPresets');
+                if (storedPresets) {
+                    allPresets = JSON.parse(storedPresets);
+                } else {
+                    allPresets = { "Default Workout": defaultPresetData };
+                }
+                
+                currentPresetName = localStorage.getItem('workoutTimerCurrentPreset') || Object.keys(allPresets)[0];
+                
+                // Fallback if current preset name was deleted somehow
+                if (!allPresets[currentPresetName]) {
+                    currentPresetName = Object.keys(allPresets)[0];
+                }
+            } catch (e) {
+                console.error("Storage load error, falling back to defaults", e);
+                allPresets = { "Default Workout": defaultPresetData };
+                currentPresetName = "Default Workout";
             }
-            document.cookie = name + "=" + (value || "")  + expires + "; path=/";
         }
 
-        function getCookie(name) {
-            let nameEQ = name + "=";
-            let ca = document.cookie.split(';');
-            for(let i=0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0)==' ') c = c.substring(1,c.length);
-                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+        function saveStorageData() {
+            if(isLoading) return; // Prevent overwriting during initial render
+            localStorage.setItem('workoutTimerPresets', JSON.stringify(allPresets));
+            localStorage.setItem('workoutTimerCurrentPreset', currentPresetName);
+        }
+
+        function updatePresetDropdown() {
+            const selector = document.getElementById('preset-selector');
+            selector.innerHTML = '';
+            for (let presetName in allPresets) {
+                const option = document.createElement('option');
+                option.value = presetName;
+                option.text = presetName;
+                if (presetName === currentPresetName) option.selected = true;
+                selector.appendChild(option);
             }
-            return null;
         }
 
-        function savePreferences() {
-            if(isLoading) return; // Don't save while initially loading data
-            const currentTotalLoops = document.getElementById('total-loops').value;
-            const data = { loops: currentTotalLoops, tracks: tracks };
-            // Save/refresh cookie for 7 days
-            setCookie('workoutPrefs', JSON.stringify(data), 7);
+        function renderCurrentPreset() {
+            isLoading = true;
+            document.getElementById('tracks-container').innerHTML = ''; // Clear current
+            
+            const preset = allPresets[currentPresetName];
+            document.getElementById('total-loops').value = preset.loops;
+            
+            preset.tracks.forEach(t => addTrackInput(t.name, t.duration, t.color));
+            
+            isLoading = false;
+            updateTrackList(); // This also rebuilds summary and triggers autosave safely
         }
 
-        // --- AUDIO ENGINE WITH DYNAMIC PITCH VARIANCE ---
+        function changePreset() {
+            currentPresetName = document.getElementById('preset-selector').value;
+            saveStorageData();
+            renderCurrentPreset();
+        }
+
+        function saveAsNewPreset() {
+            const name = prompt("Enter a name for this new preset (e.g. Knee Press):");
+            if (!name || name.trim() === "") return;
+            
+            // Scrape current UI state
+            updateTrackList(false); // Update tracks array without triggering a save yet
+            const currentLoops = parseInt(document.getElementById('total-loops').value) || 15;
+            
+            allPresets[name] = { loops: currentLoops, tracks: [...tracks] };
+            currentPresetName = name;
+            
+            updatePresetDropdown();
+            saveStorageData();
+        }
+
+        function deleteCurrentPreset() {
+            const keys = Object.keys(allPresets);
+            if (keys.length <= 1) {
+                alert("You cannot delete your last preset!");
+                return;
+            }
+            if (confirm(`Are you sure you want to delete '${currentPresetName}'?`)) {
+                delete allPresets[currentPresetName];
+                currentPresetName = Object.keys(allPresets)[0];
+                updatePresetDropdown();
+                saveStorageData();
+                renderCurrentPreset();
+            }
+        }
+
+        function autoSaveCurrentState() {
+            if(isLoading) return;
+            const currentLoops = parseInt(document.getElementById('total-loops').value) || 15;
+            allPresets[currentPresetName] = { loops: currentLoops, tracks: [...tracks] };
+            saveStorageData();
+        }
+
+        // --- AUDIO ENGINE ---
         function playBeep(baseFrequency, duration, type='sine') {
             if(isMuted) return;
             if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -252,27 +363,26 @@
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
-            // Randomize the maximum variance percentage (between 1% and 6%)
             const maxVariancePercent = (Math.random() * 0.05) + 0.01;
-            
-            // The actual variance applied is a random value within that dynamic max range
             const variance = (Math.random() * (maxVariancePercent * 2) - maxVariancePercent) * baseFrequency;
             const finalFrequency = baseFrequency + variance;
             
             oscillator.type = type;
             oscillator.frequency.setValueAtTime(finalFrequency, audioCtx.currentTime);
             
-            gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            const peakVolume = 0.15; 
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(peakVolume, audioCtx.currentTime + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
             
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
-            oscillator.start();
+            oscillator.start(audioCtx.currentTime);
             oscillator.stop(audioCtx.currentTime + duration);
         }
 
-        // --- WAKE LOCK (Keep screen on) ---
+        // --- WAKE LOCK ---
         async function requestWakeLock() {
             if ('wakeLock' in navigator) {
                 try {
@@ -289,12 +399,25 @@
         }
 
         // --- NOTIFICATIONS ---
-        function requestPermissions() {
-            if ("Notification" in window && Notification.permission === "default") {
-                Notification.requestPermission();
+        async function requestPermissionsStrict() {
+            if (!("Notification" in window)) return true;
+
+            if (Notification.permission === "granted") {
+                requestWakeLock();
+                return true;
             }
-            requestWakeLock();
+
+            const permission = await Notification.requestPermission();
+            
+            if (permission === "granted") {
+                requestWakeLock();
+                return true;
+            } else {
+                alert("Permission needed! Please allow notifications in your browser settings so the timer can alert you when switching tabs, then try again.");
+                return false; 
+            }
         }
+
         function sendNotification(title, body) {
             if ("Notification" in window && Notification.permission === "granted") {
                 if (document.visibilityState !== 'visible') {
@@ -324,10 +447,9 @@
             div.querySelectorAll('input, select').forEach(el => {
                 el.addEventListener('input', updateTrackList);
             });
-            updateTrackList();
         }
 
-        function updateTrackList() {
+        function updateTrackList(triggerSave = true) {
             const inputs = document.querySelectorAll('.track-input');
             tracks = [];
             let summaryHTML = '';
@@ -347,7 +469,8 @@
             });
             
             document.getElementById('track-summary').innerHTML = summaryHTML;
-            savePreferences(); // Save state whenever track list is updated
+            
+            if(triggerSave) autoSaveCurrentState();
         }
 
         function formatTime(totalSeconds) {
@@ -357,48 +480,24 @@
             return `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
 
-        // --- INITIALIZATION & LOADING ---
+        // --- INITIALIZATION ---
         function initApp() {
-            // Listen for changes on the loops input
-            document.getElementById('total-loops').addEventListener('input', savePreferences);
-
-            const prefsCookie = getCookie('workoutPrefs');
-            if (prefsCookie) {
-                try {
-                    const prefs = JSON.parse(prefsCookie);
-                    
-                    if (prefs.loops) document.getElementById('total-loops').value = prefs.loops;
-                    
-                    if (prefs.tracks && prefs.tracks.length > 0) {
-                        prefs.tracks.forEach(t => addTrackInput(t.name, t.duration, t.color));
-                    } else {
-                        loadDefaults();
-                    }
-                } catch(e) {
-                    loadDefaults();
-                }
-            } else {
-                loadDefaults();
-            }
+            document.getElementById('total-loops').addEventListener('input', () => autoSaveCurrentState());
             
-            isLoading = false; // Allow saving preferences from now on
-            savePreferences(); // Refresh the 7-day expiration right away
-        }
-
-        function loadDefaults() {
-            addTrackInput('Work', 10, '#4CAF50'); // Default Green (10s)
-            addTrackInput('Rest', 5, '#F44336');  // Default Red (5s)
-            document.getElementById('total-loops').value = 15;
+            loadStorageData();
+            updatePresetDropdown();
+            renderCurrentPreset();
         }
 
         window.onload = initApp;
 
         // --- TIMER LOGIC ---
-        function startWorkout() {
-            updateTrackList();
+        async function startWorkout() {
+            updateTrackList(false); // update array without unnecessary extra save
             if(tracks.length === 0) return alert("Please add at least one track!");
 
-            requestPermissions();
+            const hasPerms = await requestPermissionsStrict();
+            if(!hasPerms) return;
 
             totalLoops = parseInt(document.getElementById('total-loops').value) || 15;
             
@@ -408,7 +507,7 @@
             document.getElementById('total-sets').innerText = totalLoops;
 
             currentLoop = 1;
-            currentTrackIndex = 0;
+            currentTrackIndex = -1; // -1 is the "Get Ready" state
             isPaused = false;
             document.getElementById('pause-btn').innerText = "Pause";
             
@@ -418,20 +517,29 @@
             
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(tick, 1000);
-            playBeep(600, 0.5); // Initial Beep
+            playBeep(600, 0.5); 
         }
 
         function loadTrack() {
-            const track = tracks[currentTrackIndex];
-            timeLeft = track.duration;
-            
-            document.getElementById('current-set').innerText = currentLoop;
-            document.getElementById('track-name-display').innerText = track.name;
-            document.getElementById('timer-display').innerText = formatTime(timeLeft);
-            document.body.style.backgroundColor = track.color;
-            
-            sendNotification(`Set ${currentLoop}: ${track.name}`, `${formatTime(track.duration)} on the clock.`);
-            updateProgressBar();
+            if (currentTrackIndex === -1) {
+                timeLeft = 5;
+                document.getElementById('current-set').innerText = "-";
+                document.getElementById('track-name-display').innerText = "Get Ready!";
+                document.getElementById('timer-display').innerText = formatTime(timeLeft);
+                document.body.style.backgroundColor = "#555555";
+                updateProgressBar();
+            } else {
+                const track = tracks[currentTrackIndex];
+                timeLeft = track.duration;
+                
+                document.getElementById('current-set').innerText = currentLoop;
+                document.getElementById('track-name-display').innerText = track.name;
+                document.getElementById('timer-display').innerText = formatTime(timeLeft);
+                document.body.style.backgroundColor = track.color;
+                
+                sendNotification(`Set ${currentLoop}: ${track.name}`, `${formatTime(track.duration)} on the clock.`);
+                updateProgressBar();
+            }
         }
 
         function tick() {
@@ -465,10 +573,15 @@
         }
 
         function updateProgressBar() {
-            const track = tracks[currentTrackIndex];
-            if (!track) return;
-            const percentage = ((track.duration - timeLeft) / track.duration) * 100;
-            document.getElementById('progress-bar').style.width = percentage + '%';
+            if (currentTrackIndex === -1) {
+                const percentage = ((5 - timeLeft) / 5) * 100;
+                document.getElementById('progress-bar').style.width = percentage + '%';
+            } else {
+                const track = tracks[currentTrackIndex];
+                if (!track) return;
+                const percentage = ((track.duration - timeLeft) / track.duration) * 100;
+                document.getElementById('progress-bar').style.width = percentage + '%';
+            }
         }
 
         function togglePause() {
