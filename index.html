@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workout Interval Timer</title>
+    <title>Pro Workout Timer</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -20,7 +20,8 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.4s ease;
+            overflow-x: hidden;
         }
         .container {
             background: rgba(0, 0, 0, 0.6);
@@ -30,6 +31,8 @@
             text-align: center;
             max-width: 500px;
             width: 90%;
+            position: relative;
+            z-index: 2;
         }
         h1 { margin-top: 0; }
         
@@ -37,7 +40,7 @@
         #setup-section { display: block; }
         .track-input {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 10px;
             align-items: center;
         }
@@ -46,25 +49,31 @@
             border-radius: 5px;
             border: none;
             outline: none;
+            font-size: 14px;
         }
-        input[type="text"] { flex: 2; }
-        input[type="number"] { flex: 1; width: 60px; }
-        input[type="color"] { flex: 0.5; height: 35px; padding: 2px; }
+        input[type="text"] { flex: 2; min-width: 0; }
+        input[type="number"] { flex: 1; min-width: 0; }
+        select.t-color { flex: 1.5; min-width: 0; cursor: pointer; }
         
         .btn {
-            padding: 10px 20px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
-            transition: background 0.2s;
+            transition: transform 0.1s, opacity 0.2s;
             margin: 5px;
+            text-transform: uppercase;
         }
-        .btn-add { background: #4CAF50; color: white; width: 100%; margin-top: 10px; }
-        .btn-start { background: #2196F3; color: white; width: 100%; font-size: 20px; padding: 15px; margin-top: 20px;}
+        .btn:active { transform: scale(0.96); }
+        .btn:hover { opacity: 0.9; }
+        
+        .btn-add { background: #333; border: 1px solid #555; color: white; width: 100%; margin-top: 10px; }
+        .btn-start { background: #4CAF50; color: white; width: 100%; font-size: 20px; padding: 15px; margin-top: 20px;}
         .btn-pause { background: #FF9800; color: white; }
         .btn-stop { background: #f44336; color: white; }
+        .btn-icon { background: rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 50%; }
 
         .form-group {
             margin-top: 20px;
@@ -72,24 +81,52 @@
             background: rgba(255,255,255,0.1);
             padding: 15px;
             border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         /* Timer Section */
         #timer-section { display: none; }
         #timer-display {
-            font-size: 120px;
+            font-size: 130px;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 10px 0;
             font-variant-numeric: tabular-nums;
             line-height: 1;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
         }
-        #track-name-display { font-size: 40px; margin-bottom: 10px; }
-        #sets-display { font-size: 24px; opacity: 0.8; }
+        #track-name-display { font-size: 45px; margin-bottom: 5px; font-weight: 600; text-shadow: 1px 1px 4px rgba(0,0,0,0.3); }
+        #sets-display { font-size: 22px; opacity: 0.9; margin-bottom: 15px; background: rgba(0,0,0,0.4); padding: 5px 15px; border-radius: 20px; display: inline-block;}
         
-        #track-list {
+        #controls-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
             margin-top: 20px;
-            text-align: left;
         }
+
+        /* Progress Bar */
+        #progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 15px;
+            background: rgba(0,0,0,0.3);
+            display: none;
+            z-index: 10;
+        }
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: white;
+            transition: width 1s linear;
+        }
+
+        /* Track List Summary */
+        #track-list { margin-top: 20px; text-align: left; }
         .track-item {
             display: flex;
             justify-content: space-between;
@@ -98,66 +135,81 @@
             margin-bottom: 5px;
             border-radius: 5px;
         }
-        .delete-btn { color: #ff5252; cursor: pointer; font-weight: bold; }
+        .delete-btn { color: #ff5252; cursor: pointer; font-weight: bold; padding: 10px; }
     </style>
 </head>
 <body>
 
     <!-- SETUP SCREEN -->
     <div class="container" id="setup-section">
-        <h1>Workout Timer Setup</h1>
+        <h1>Workout Timer</h1>
         
-        <div id="tracks-container">
-            <!-- Tracks will be added here -->
-        </div>
+        <div id="tracks-container"></div>
         
-        <button class="btn btn-add" onclick="addTrackInput()">+ Add Another Track</button>
+        <button class="btn btn-add" onclick="addTrackInput()">+ Add Track</button>
 
         <div class="form-group">
-            <label for="total-loops"><strong>Total Loops (Reps):</strong></label>
-            <input type="number" id="total-loops" value="15" min="1" style="width: 80px; margin-left: 10px;">
+            <label for="total-loops"><strong>Total Sets (Loops):</strong></label>
+            <input type="number" id="total-loops" value="10" min="1" style="width: 80px;">
         </div>
 
         <button class="btn btn-start" onclick="startWorkout()">START WORKOUT</button>
 
         <div id="track-list">
-            <h3>Current Tracks:</h3>
             <div id="track-summary"></div>
         </div>
     </div>
 
     <!-- TIMER SCREEN -->
     <div class="container" id="timer-section">
-        <div id="sets-display">Set: <span id="current-set">1</span> / <span id="total-sets">30</span></div>
+        <div id="sets-display">Set <span id="current-set">1</span> of <span id="total-sets">10</span></div>
         <div id="track-name-display">Get Ready!</div>
-        <div id="timer-display">00</div>
+        <div id="timer-display">00:00</div>
         
-        <div>
+        <div id="controls-row">
             <button class="btn btn-pause" id="pause-btn" onclick="togglePause()">Pause</button>
-            <button class="btn btn-stop" onclick="stopWorkout()">Stop & Back</button>
+            <button class="btn btn-stop" onclick="stopWorkout()">Stop</button>
+            <button class="btn btn-icon" id="mute-btn" onclick="toggleMute()" title="Toggle Sound">🔊</button>
         </div>
+    </div>
+
+    <div id="progress-container">
+        <div id="progress-bar"></div>
     </div>
 
     <script>
         let tracks = [];
         let totalLoops = 1;
-        
-        // Timer state
         let currentLoop = 1;
         let currentTrackIndex = 0;
         let timeLeft = 0;
         let timerInterval = null;
         let isPaused = false;
-
-        // Sound Generator (Web Audio API)
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let isMuted = false;
         
-        function playBeep(frequency, duration) {
+        // System APIs
+        let wakeLock = null;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // --- PALETTE CONFIGURATION ---
+        const colorPalette = [
+            { name: "Green (Work)", hex: "#4CAF50" },
+            { name: "Red (Rest)", hex: "#F44336" },
+            { name: "Blue (Cool)", hex: "#2196F3" },
+            { name: "Orange (Warn)", hex: "#FF9800" },
+            { name: "Purple (Max)", hex: "#9C27B0" },
+            { name: "Teal (Steady)", hex: "#00BCD4" }
+        ];
+
+        // --- AUDIO ENGINE ---
+        function playBeep(frequency, duration, type='sine') {
+            if(isMuted) return;
             if(audioCtx.state === 'suspended') audioCtx.resume();
+            
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
-            oscillator.type = 'sine';
+            oscillator.type = type;
             oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
             
             gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
@@ -170,23 +222,66 @@
             oscillator.stop(audioCtx.currentTime + duration);
         }
 
-        // Setup UI
-        function addTrackInput(name = '', duration = 10, color = '#2196F3') {
+        // --- WAKE LOCK (Keep screen on) ---
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => { console.log('Wake Lock released'); });
+                } catch (err) {
+                    console.log(`Wake Lock Error: ${err.name}, ${err.message}`);
+                }
+            }
+        }
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release().then(() => { wakeLock = null; });
+            }
+        }
+        // Re-acquire wake lock if tab becomes visible again
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
+        // --- NOTIFICATIONS ---
+        function requestPermissions() {
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+            requestWakeLock();
+        }
+        function sendNotification(title, body) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                // If the user is currently looking at the page, don't spam notifications
+                if (document.visibilityState !== 'visible') {
+                    new Notification(title, { body: body, silent: true }); 
+                }
+            }
+        }
+
+        // --- UI SETUP ---
+        function addTrackInput(name = '', duration = 10, defaultHex = '#4CAF50') {
             const container = document.getElementById('tracks-container');
             const div = document.createElement('div');
             div.className = 'track-input';
             
+            // Build dropdown options
+            let optionsHTML = colorPalette.map(c => 
+                `<option value="${c.hex}" ${c.hex === defaultHex ? 'selected' : ''}>${c.name}</option>`
+            ).join('');
+
             div.innerHTML = `
-                <input type="text" placeholder="Name (e.g. Work)" value="${name}" class="t-name">
+                <input type="text" placeholder="Name" value="${name}" class="t-name">
                 <input type="number" placeholder="Secs" value="${duration}" min="1" class="t-duration">
-                <input type="color" value="${color}" class="t-color">
+                <select class="t-color">${optionsHTML}</select>
                 <span class="delete-btn" onclick="this.parentElement.remove(); updateTrackList();">✕</span>
             `;
             container.appendChild(div);
             
-            // Listen for changes to update summary
-            div.querySelectorAll('input').forEach(input => {
-                input.addEventListener('input', updateTrackList);
+            div.querySelectorAll('input, select').forEach(el => {
+                el.addEventListener('input', updateTrackList);
             });
             updateTrackList();
         }
@@ -197,7 +292,7 @@
             let summaryHTML = '';
             
             inputs.forEach(input => {
-                const name = input.querySelector('.t-name').value || 'Track';
+                const name = input.querySelector('.t-name').value || 'Task';
                 const duration = parseInt(input.querySelector('.t-duration').value) || 10;
                 const color = input.querySelector('.t-color').value;
                 
@@ -206,42 +301,51 @@
                 summaryHTML += `
                     <div class="track-item" style="border-left: 5px solid ${color}">
                         <span>${name}</span>
-                        <span>${duration}s</span>
+                        <span>${formatTime(duration)}</span>
                     </div>`;
             });
             
             document.getElementById('track-summary').innerHTML = summaryHTML;
         }
 
-        // Initialize with default template (Work + Rest)
-        addTrackInput('Work', 10, '#4CAF50'); // Green
-        addTrackInput('Rest', 5, '#f44336');  // Red
+        // Format Seconds into MM:SS
+        function formatTime(totalSeconds) {
+            if (totalSeconds < 60) return totalSeconds; // Show just seconds if under a minute
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
 
-        // Timer Logic
+        // Initialize defaults
+        addTrackInput('Work', 30, '#4CAF50'); // Default Green
+        addTrackInput('Rest', 10, '#F44336'); // Default Red
+
+        // --- TIMER LOGIC ---
         function startWorkout() {
             updateTrackList();
-            if(tracks.length === 0) {
-                alert("Please add at least one track!");
-                return;
-            }
+            if(tracks.length === 0) return alert("Please add at least one track!");
+
+            requestPermissions(); // Ask for Notifications & WakeLock
 
             totalLoops = parseInt(document.getElementById('total-loops').value) || 1;
             
             document.getElementById('setup-section').style.display = 'none';
             document.getElementById('timer-section').style.display = 'block';
+            document.getElementById('progress-container').style.display = 'block';
             document.getElementById('total-sets').innerText = totalLoops;
 
-            // Reset States
             currentLoop = 1;
             currentTrackIndex = 0;
             isPaused = false;
             document.getElementById('pause-btn').innerText = "Pause";
             
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            
             loadTrack();
             
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(tick, 1000);
-            playBeep(600, 0.5); // Initial Start Beep
+            playBeep(600, 0.5); // Initial Beep
         }
 
         function loadTrack() {
@@ -250,42 +354,51 @@
             
             document.getElementById('current-set').innerText = currentLoop;
             document.getElementById('track-name-display').innerText = track.name;
-            document.getElementById('timer-display').innerText = timeLeft;
+            document.getElementById('timer-display').innerText = formatTime(timeLeft);
             document.body.style.backgroundColor = track.color;
+            
+            // Send desktop notification if in background
+            sendNotification(`Set ${currentLoop}: ${track.name}`, `${formatTime(track.duration)} on the clock.`);
+            updateProgressBar();
         }
 
         function tick() {
             if (isPaused) return;
 
             timeLeft--;
+            updateProgressBar();
 
-            // Countdown beeps (last 3 seconds)
+            // 3-second countdown warning
             if (timeLeft > 0 && timeLeft <= 3) {
                 playBeep(440, 0.2); 
             }
 
             if (timeLeft <= 0) {
-                // Next track
                 currentTrackIndex++;
                 
-                // If end of tracks, go to next loop
+                // End of track list -> Loop again
                 if (currentTrackIndex >= tracks.length) {
                     currentTrackIndex = 0;
                     currentLoop++;
                     
-                    // If end of workout
                     if (currentLoop > totalLoops) {
                         finishWorkout();
                         return;
                     }
                 }
                 
-                // Play transition sound (Higher pitch)
-                playBeep(880, 0.4);
+                playBeep(880, 0.4); // Next track sound
                 loadTrack();
             } else {
-                document.getElementById('timer-display').innerText = timeLeft;
+                document.getElementById('timer-display').innerText = formatTime(timeLeft);
             }
+        }
+
+        function updateProgressBar() {
+            const track = tracks[currentTrackIndex];
+            if (!track) return;
+            const percentage = ((track.duration - timeLeft) / track.duration) * 100;
+            document.getElementById('progress-bar').style.width = percentage + '%';
         }
 
         function togglePause() {
@@ -293,11 +406,23 @@
             document.getElementById('pause-btn').innerText = isPaused ? "Resume" : "Pause";
         }
 
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById('mute-btn').innerText = isMuted ? "🔇" : "🔊";
+        }
+
         function finishWorkout() {
             clearInterval(timerInterval);
+            releaseWakeLock();
+            
             document.getElementById('track-name-display').innerText = "Workout Complete!";
             document.getElementById('timer-display').innerText = "🎉";
-            document.body.style.backgroundColor = "#2196F3"; // Blue win screen
+            document.getElementById('progress-bar').style.width = '100%';
+            document.body.style.backgroundColor = "#2196F3"; // Victory Blue
+            
+            sendNotification("Workout Complete!", "Great job!");
+
+            // Victory Chime
             playBeep(523.25, 0.2); // C5
             setTimeout(() => playBeep(659.25, 0.2), 200); // E5
             setTimeout(() => playBeep(783.99, 0.4), 400); // G5
@@ -305,9 +430,11 @@
 
         function stopWorkout() {
             clearInterval(timerInterval);
+            releaseWakeLock();
             document.body.style.backgroundColor = "var(--bg-color)";
             document.getElementById('setup-section').style.display = 'block';
             document.getElementById('timer-section').style.display = 'none';
+            document.getElementById('progress-container').style.display = 'none';
         }
     </script>
 </body>
