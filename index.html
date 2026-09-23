@@ -267,6 +267,7 @@
         <!-- Controls moved back to center screen -->
         <div id="controls-row">
             <button class="btn btn-orange btn-large" id="main-pause-btn" onclick="togglePause()">Pause Timer</button>
+            <button class="btn btn-dark btn-large" id="main-done-btn" style="display: none;" onclick="backToSetup()">Back to Setup</button>
             <button class="btn btn-icon" id="main-mute-btn" onclick="toggleMute()" title="Toggle Sound">🔊</button>
         </div>
     </div>
@@ -400,15 +401,12 @@
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
-            // Reduced variance to avoid generating harsh harmonics
             const maxVar = (Math.random() * 0.02) + 0.01;
             const finalFreq = baseFreq + ((Math.random() * (maxVar * 2) - maxVar) * baseFreq);
             
             osc.type = type;
             osc.frequency.setValueAtTime(finalFreq, audioCtx.currentTime);
             
-            // Speaker-safe envelope for cheap mobile speakers
-            // Gain lowered to 0.08, and attack time increased to 50ms to stop cone snapping
             gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
             gainNode.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.05);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
@@ -508,6 +506,10 @@
             
             document.getElementById('total-sets').innerText = totalLoops;
             
+            // Ensure proper buttons are showing
+            document.getElementById('main-pause-btn').style.display = 'inline-flex';
+            document.getElementById('main-done-btn').style.display = 'none';
+            
             isPaused = false;
             document.getElementById('main-pause-btn').innerText = "Pause Timer";
             
@@ -532,7 +534,13 @@
             document.getElementById('nav-controls').style.display = 'none';
             
             document.body.style.backgroundColor = "var(--bg-color)";
-            document.getElementById('btn-start').innerText = "RESUME WORKOUT";
+            
+            // Properly label the button based on whether we are finished or just paused
+            if(workoutSessionActive) {
+                document.getElementById('btn-start').innerText = "RESUME WORKOUT";
+            } else {
+                document.getElementById('btn-start').innerText = "START WORKOUT";
+            }
         }
 
         function resetWorkout() {
@@ -572,7 +580,6 @@
             timeLeft--;
             updateProgressBar();
 
-            // Shifted down to 500Hz - easier on phone speakers
             if (timeLeft > 0 && timeLeft <= 3) playBeep(500, 0.25); 
 
             if (timeLeft <= 0) {
@@ -588,7 +595,6 @@
                     }
                 }
                 
-                // Shifted down to 700Hz
                 playBeep(700, 0.4);
                 loadTrack();
             } else {
@@ -628,6 +634,10 @@
             
             document.getElementById('nav-controls').style.display = 'none';
             document.getElementById('nav-github').style.display = 'flex';
+            
+            // Swap controls row buttons (hide pause, show 'Back to Setup')
+            document.getElementById('main-pause-btn').style.display = 'none';
+            document.getElementById('main-done-btn').style.display = 'inline-flex';
             
             sendNotification("Workout Complete!", "Great job!");
             playBeep(523.25, 0.2); setTimeout(() => playBeep(659.25, 0.2), 200); setTimeout(() => playBeep(783.99, 0.4), 400);
