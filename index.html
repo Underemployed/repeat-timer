@@ -29,98 +29,59 @@
             min-height: 100vh;
             transition: background-color 0.4s ease;
             overflow-x: hidden;
-            padding-top: 70px;
+            padding-top: 80px;
         }
 
         /* --- NAVBAR --- */
         .navbar {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
+            top: 0; left: 0; width: 100%; height: 60px;
             background: rgba(20, 20, 20, 0.95);
             backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100;
         }
         .nav-brand { font-size: 20px; font-weight: bold; letter-spacing: 1px; }
-        .nav-controls { display: none; gap: 10px; }
+        .nav-links { display: flex; gap: 15px; align-items: center; }
         .nav-link {
-            color: #ccc;
-            text-decoration: none;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: color 0.2s;
+            color: #ddd; text-decoration: none; font-size: 14px;
+            display: flex; align-items: center; gap: 6px; transition: color 0.2s;
+            cursor: pointer; font-weight: 600; padding: 6px 10px; border-radius: 6px;
         }
-        .nav-link:hover { color: white; }
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+        .nav-controls { display: none; gap: 10px; }
 
         /* --- MAIN CONTAINER --- */
         .container {
             background: var(--surface-color);
-            padding: 25px;
-            border-radius: 16px;
+            padding: 25px; border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-            text-align: center;
-            max-width: 500px;
-            width: 92%;
-            position: relative;
-            z-index: 2;
-            margin-bottom: 30px;
+            text-align: center; max-width: 500px; width: 92%;
+            position: relative; z-index: 2; margin-bottom: 30px;
         }
         
         h1 { margin: 0 0 20px 0; font-size: 26px; }
         
-        /* --- PRESET MANAGER --- */
-        .preset-group {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 25px;
-            background: rgba(0,0,0,0.3);
-            padding: 12px;
-            border-radius: 10px;
-            align-items: center;
+        /* --- ACTIVE PRESET HEADER --- */
+        .active-preset-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 25px; background: rgba(0,0,0,0.3);
+            padding: 15px; border-radius: 10px; text-align: left;
         }
-        #preset-selector {
-            flex: 2;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            background: #2a2a2a;
-            color: white;
-            font-weight: 600;
-            font-size: 14px;
-            outline: none;
-        }
+        .preset-title-sm { font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .preset-title-lg { font-size: 18px; font-weight: bold; color: var(--primary); }
         
         /* --- SETUP UI --- */
         #setup-section { display: block; }
         .track-input {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-            align-items: center;
-            background: rgba(255,255,255,0.03);
-            padding: 8px;
-            border-radius: 8px;
+            display: flex; gap: 8px; margin-bottom: 12px; align-items: center;
+            background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px;
         }
         input, select {
-            padding: 12px 10px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            background: #2a2a2a;
-            color: white;
-            outline: none;
-            font-size: 14px;
+            padding: 12px 10px; border-radius: 6px; border: 1px solid #444;
+            background: #2a2a2a; color: white; outline: none; font-size: 14px;
         }
         input:focus, select:focus { border-color: var(--primary); }
-        
         .track-input input[type="text"] { flex: 2; min-width: 0; }
         .track-input input[type="number"] { flex: 1; min-width: 0; text-align: center; }
         .track-input select.t-color { flex: 1.5; min-width: 0; cursor: pointer; }
@@ -128,21 +89,14 @@
         
         /* --- BUTTONS --- */
         .btn {
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.15s ease;
-            text-transform: uppercase;
-            color: white;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
+            transition: all 0.15s ease; text-transform: uppercase; color: white;
+            display: inline-flex; align-items: center; justify-content: center;
         }
         .btn:active { transform: scale(0.96); }
         .btn:hover { filter: brightness(1.1); }
         
-        .btn-small { padding: 10px; font-size: 12px; flex: 1; }
+        .btn-small { padding: 8px 12px; font-size: 12px; }
         .btn-normal { padding: 12px 20px; font-size: 16px; }
         .btn-large { padding: 16px 30px; font-size: 18px; }
         
@@ -154,62 +108,56 @@
         .btn-red { background: var(--danger); }
         .btn-orange { background: var(--warning); }
         .btn-dark { background: #333; }
-        .btn-icon { background: rgba(255,255,255,0.15); color: white; padding: 15px; border-radius: 50%; font-size: 20px; }
+        .btn-icon { background: transparent; color: white; padding: 10px; border-radius: 50%; font-size: 20px; }
 
         /* --- LOOPS GROUP --- */
         .form-group {
-            margin-top: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(0,0,0,0.3);
-            padding: 15px 20px;
-            border-radius: 10px;
+            margin-top: 25px; display: flex; align-items: center; justify-content: space-between;
+            background: rgba(0,0,0,0.3); padding: 15px 20px; border-radius: 10px;
         }
         #total-loops { flex: none; width: 80px; text-align: center; font-weight: bold; font-size: 18px; }
 
         /* --- TIMER UI --- */
-        #timer-section { display: none; margin-top: 40px; }
+        #timer-section { display: none; margin-top: 20px; }
         #timer-display {
-            font-size: 140px;
-            font-weight: bold;
-            margin: 10px 0;
-            font-variant-numeric: tabular-nums;
-            line-height: 1;
-            text-shadow: 0px 4px 15px rgba(0,0,0,0.4);
+            font-size: 150px; font-weight: bold; margin: 10px 0;
+            font-variant-numeric: tabular-nums; line-height: 1; text-shadow: 0px 4px 15px rgba(0,0,0,0.4);
         }
         #track-name-display { font-size: 42px; margin-bottom: 5px; font-weight: 700; text-shadow: 1px 2px 6px rgba(0,0,0,0.3); }
         #sets-display { font-size: 20px; margin-bottom: 20px; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 30px; display: inline-block;}
         
-        #controls-row {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-top: 30px;
-        }
+        #controls-row { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 30px; }
 
         /* --- PROGRESS BAR --- */
         #progress-container {
-            position: fixed;
-            bottom: 0; left: 0; width: 100%; height: 12px;
-            background: rgba(0,0,0,0.4);
-            display: none; z-index: 10;
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 12px;
+            background: rgba(0,0,0,0.4); display: none; z-index: 10;
         }
         #progress-bar { height: 100%; width: 0%; background: white; transition: width 1s linear; }
 
-        /* --- CUSTOM MODAL --- */
-        #modal-overlay {
+        /* --- MODALS --- */
+        .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
             display: none; justify-content: center; align-items: center; z-index: 200;
         }
         .modal-box {
             background: var(--surface-color); padding: 25px; border-radius: 12px;
-            width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            width: 90%; max-width: 450px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         .modal-box input { width: 100%; margin: 15px 0; font-size: 16px; }
-        .modal-buttons { display: flex; gap: 10px; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 15px; }
+
+        /* --- PRESET MANAGER LIST --- */
+        .preset-list { margin-top: 20px; max-height: 50vh; overflow-y: auto; text-align: left; }
+        .preset-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 10px;
+            border-left: 4px solid transparent;
+        }
+        .preset-item.active { border-left-color: var(--primary); background: rgba(33, 150, 243, 0.1); }
+        .preset-item-name { font-weight: 600; font-size: 15px; }
+        .preset-item-actions { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
@@ -217,22 +165,36 @@
     <!-- NAVBAR -->
     <nav class="navbar">
         <div class="nav-brand">⏱️ ProTimer</div>
+        <div class="nav-links" id="nav-links">
+            <div class="nav-link" onclick="openPresetManager()">📁 Manage Presets</div>
+            <a href="https://github.com/Underemployed/repeat-timer" target="_blank" class="nav-link">⭐ Star Repo</a>
+        </div>
         <div class="nav-controls" id="nav-controls">
             <button class="btn btn-dark btn-normal" onclick="backToSetup()">⚙️ Edit Setup</button>
         </div>
-        <a href="https://github.com/Underemployed/repeat-timer" target="_blank" class="nav-link" id="nav-github">
-            ⭐ Star Repo
-        </a>
     </nav>
 
-    <!-- CUSTOM SAVE MODAL -->
-    <div id="modal-overlay">
+    <!-- SAVE AS MODAL -->
+    <div id="save-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3>Save Preset As...</h3>
-            <input type="text" id="preset-name-input" placeholder="e.g. Knee Press">
+            <h3 style="margin-top: 0;">Save Preset As...</h3>
+            <input type="text" id="preset-name-input" placeholder="e.g. Core Crusher">
             <div class="modal-buttons">
-                <button class="btn btn-dark btn-normal" style="flex:1" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-dark btn-normal" style="flex:1" onclick="closeSaveModal()">Cancel</button>
                 <button class="btn btn-blue btn-normal" style="flex:1" onclick="confirmSavePreset()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRESET MANAGER MODAL -->
+    <div id="manager-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;">Your Workouts</h3>
+                <button class="btn btn-icon" onclick="closePresetManager()">✕</button>
+            </div>
+            <div class="preset-list" id="preset-list-container">
+                <!-- Populated by JS -->
             </div>
         </div>
     </div>
@@ -240,10 +202,12 @@
     <!-- SETUP SCREEN -->
     <div class="container" id="setup-section">
         
-        <div class="preset-group">
-            <select id="preset-selector" onchange="changePreset()"></select>
-            <button class="btn btn-small btn-blue" onclick="openModal()">Save As</button>
-            <button class="btn btn-small btn-red" onclick="deleteCurrentPreset()">Delete</button>
+        <div class="active-preset-header">
+            <div>
+                <div class="preset-title-sm">Currently Editing</div>
+                <div class="preset-title-lg" id="current-preset-label">Default Workout</div>
+            </div>
+            <button class="btn btn-small btn-blue" onclick="openSaveModal()">Save As New</button>
         </div>
 
         <div id="tracks-container"></div>
@@ -264,11 +228,10 @@
         <div id="track-name-display">Get Ready!</div>
         <div id="timer-display">00:00</div>
         
-        <!-- Controls moved back to center screen -->
         <div id="controls-row">
             <button class="btn btn-orange btn-large" id="main-pause-btn" onclick="togglePause()">Pause Timer</button>
             <button class="btn btn-dark btn-large" id="main-done-btn" style="display: none;" onclick="backToSetup()">Back to Setup</button>
-            <button class="btn btn-icon" id="main-mute-btn" onclick="toggleMute()" title="Toggle Sound">🔊</button>
+            <button class="btn btn-icon" id="main-mute-btn" onclick="toggleMute()" title="Toggle Sound" style="background: rgba(255,255,255,0.15)">🔊</button>
         </div>
     </div>
 
@@ -301,14 +264,13 @@
         // --- PRESET MANAGEMENT ---
         let allPresets = {};
         let currentPresetName = "";
-
         const defaultPresetData = { loops: 15, tracks: [{ name: "Work", duration: 10, color: "#4CAF50" }, { name: "Rest", duration: 5, color: "#F44336" }] };
 
         function loadStorageData() {
             try {
-                const storedPresets = localStorage.getItem('workoutTimerPresets2');
+                const storedPresets = localStorage.getItem('workoutTimerPresets3');
                 allPresets = storedPresets ? JSON.parse(storedPresets) : { "Default Workout": defaultPresetData };
-                currentPresetName = localStorage.getItem('workoutTimerCurrentPreset2') || Object.keys(allPresets)[0];
+                currentPresetName = localStorage.getItem('workoutTimerCurrentPreset3') || Object.keys(allPresets)[0];
                 if (!allPresets[currentPresetName]) currentPresetName = Object.keys(allPresets)[0];
             } catch (e) {
                 allPresets = { "Default Workout": defaultPresetData };
@@ -318,72 +280,19 @@
 
         function saveStorageData() {
             if(isLoading) return;
-            localStorage.setItem('workoutTimerPresets2', JSON.stringify(allPresets));
-            localStorage.setItem('workoutTimerCurrentPreset2', currentPresetName);
-        }
-
-        function updatePresetDropdown() {
-            const selector = document.getElementById('preset-selector');
-            selector.innerHTML = '';
-            for (let name in allPresets) {
-                const opt = document.createElement('option');
-                opt.value = opt.text = name;
-                if (name === currentPresetName) opt.selected = true;
-                selector.appendChild(opt);
-            }
+            localStorage.setItem('workoutTimerPresets3', JSON.stringify(allPresets));
+            localStorage.setItem('workoutTimerCurrentPreset3', currentPresetName);
         }
 
         function renderCurrentPreset() {
             isLoading = true;
+            document.getElementById('current-preset-label').innerText = currentPresetName;
             document.getElementById('tracks-container').innerHTML = ''; 
             const preset = allPresets[currentPresetName];
             document.getElementById('total-loops').value = preset.loops;
             preset.tracks.forEach(t => addTrackInput(t.name, t.duration, t.color));
             isLoading = false;
             updateTrackList(); 
-        }
-
-        function changePreset() {
-            if(workoutSessionActive) resetWorkout();
-            currentPresetName = document.getElementById('preset-selector').value;
-            saveStorageData();
-            renderCurrentPreset();
-        }
-
-        // --- CUSTOM MODAL LOGIC ---
-        function openModal() {
-            document.getElementById('modal-overlay').style.display = 'flex';
-            document.getElementById('preset-name-input').focus();
-        }
-        function closeModal() {
-            document.getElementById('modal-overlay').style.display = 'none';
-            document.getElementById('preset-name-input').value = "";
-        }
-        function confirmSavePreset() {
-            const name = document.getElementById('preset-name-input').value.trim();
-            if (!name) return alert("Please enter a name");
-            
-            updateTrackList(false);
-            const currentLoops = parseInt(document.getElementById('total-loops').value) || 15;
-            
-            allPresets[name] = { loops: currentLoops, tracks: [...tracks] };
-            currentPresetName = name;
-            
-            updatePresetDropdown();
-            saveStorageData();
-            closeModal();
-        }
-
-        function deleteCurrentPreset() {
-            if (Object.keys(allPresets).length <= 1) return alert("You cannot delete your last preset!");
-            if (confirm(`Delete '${currentPresetName}'?`)) {
-                if(workoutSessionActive) resetWorkout();
-                delete allPresets[currentPresetName];
-                currentPresetName = Object.keys(allPresets)[0];
-                updatePresetDropdown();
-                saveStorageData();
-                renderCurrentPreset();
-            }
         }
 
         function autoSaveCurrentState() {
@@ -393,7 +302,81 @@
             saveStorageData();
         }
 
-        // --- SAFE AUDIO ENGINE ---
+        // --- MODAL LOGIC (SAVE) ---
+        function openSaveModal() {
+            document.getElementById('save-modal').style.display = 'flex';
+            document.getElementById('preset-name-input').focus();
+        }
+        function closeSaveModal() {
+            document.getElementById('save-modal').style.display = 'none';
+            document.getElementById('preset-name-input').value = "";
+        }
+        function confirmSavePreset() {
+            const name = document.getElementById('preset-name-input').value.trim();
+            if (!name) return alert("Please enter a name");
+            if (allPresets[name] && !confirm("Overwrite existing preset?")) return;
+            
+            updateTrackList(false);
+            const currentLoops = parseInt(document.getElementById('total-loops').value) || 15;
+            allPresets[name] = { loops: currentLoops, tracks: [...tracks] };
+            currentPresetName = name;
+            saveStorageData();
+            renderCurrentPreset();
+            closeSaveModal();
+        }
+
+        // --- MODAL LOGIC (MANAGER) ---
+        function openPresetManager() {
+            renderManagerList();
+            document.getElementById('manager-modal').style.display = 'flex';
+        }
+        function closePresetManager() {
+            document.getElementById('manager-modal').style.display = 'none';
+        }
+        
+        function renderManagerList() {
+            const container = document.getElementById('preset-list-container');
+            container.innerHTML = '';
+            
+            for (let name in allPresets) {
+                const isActive = (name === currentPresetName);
+                const div = document.createElement('div');
+                div.className = `preset-item ${isActive ? 'active' : ''}`;
+                
+                div.innerHTML = `
+                    <div class="preset-item-name">${name} ${isActive ? '<i>(Active)</i>' : ''}</div>
+                    <div class="preset-item-actions">
+                        ${!isActive ? `<button class="btn btn-blue btn-small" onclick="loadPreset('${name}')">Load</button>` : ''}
+                        <button class="btn btn-red btn-small" onclick="deletePreset('${name}')">Delete</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function loadPreset(name) {
+            if(workoutSessionActive) resetWorkout();
+            currentPresetName = name;
+            saveStorageData();
+            renderCurrentPreset();
+            closePresetManager();
+        }
+
+        function deletePreset(name) {
+            if (Object.keys(allPresets).length <= 1) return alert("You must have at least one preset.");
+            if (confirm(`Are you sure you want to delete '${name}'?`)) {
+                delete allPresets[name];
+                if (currentPresetName === name) {
+                    if(workoutSessionActive) resetWorkout();
+                    currentPresetName = Object.keys(allPresets)[0];
+                    renderCurrentPreset();
+                }
+                saveStorageData();
+                renderManagerList(); // refresh list
+            }
+        }
+
+        // --- SAFE AUDIO ENGINE WITH RANDOMIZATION ---
         function playBeep(baseFreq, duration, type='sine') {
             if(isMuted) return;
             if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -401,14 +384,16 @@
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
-            const maxVar = (Math.random() * 0.02) + 0.01;
-            const finalFreq = baseFreq + ((Math.random() * (maxVar * 2) - maxVar) * baseFreq);
+            // Apply tiny 1.5% randomized jitter to the frequency so it sounds natural, not robotic
+            const variancePercent = 0.015;
+            const variance = baseFreq * (Math.random() * (variancePercent * 2) - variancePercent);
+            const finalFreq = baseFreq + variance;
             
             osc.type = type;
             osc.frequency.setValueAtTime(finalFreq, audioCtx.currentTime);
             
             gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.05);
+            gainNode.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.05); // Soft attack for speakers
             gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
             
             osc.connect(gainNode); gainNode.connect(audioCtx.destination);
@@ -423,9 +408,7 @@
 
         async function requestPermissionsSoft() {
             if (!("Notification" in window)) return;
-            if (Notification.permission === "default") {
-                await Notification.requestPermission(); 
-            }
+            if (Notification.permission === "default") await Notification.requestPermission(); 
             requestWakeLock();
         }
 
@@ -472,10 +455,10 @@
 
         window.onload = () => {
             document.getElementById('total-loops').addEventListener('input', autoSaveCurrentState);
-            loadStorageData(); updatePresetDropdown(); renderCurrentPreset();
+            loadStorageData(); renderCurrentPreset();
         };
 
-        // --- TIMER LOGIC WITH RESUME FEATURE ---
+        // --- TIMER LOGIC ---
         async function startOrResumeWorkout() {
             updateTrackList(false); 
             if(tracks.length === 0) return alert("Please add at least one track!");
@@ -490,7 +473,6 @@
             } else {
                 if (currentTrackIndex >= tracks.length) currentTrackIndex = tracks.length - 1;
                 if (currentTrackIndex < 0 && tracks.length > 0) currentTrackIndex = 0; 
-                
                 if (currentTrackIndex !== -1 && tracks[currentTrackIndex]) {
                     if (timeLeft > tracks[currentTrackIndex].duration) timeLeft = tracks[currentTrackIndex].duration;
                 }
@@ -500,13 +482,11 @@
             document.getElementById('timer-section').style.display = 'block';
             document.getElementById('progress-container').style.display = 'block';
             
-            // Swap Navbar links
-            document.getElementById('nav-github').style.display = 'none';
+            document.getElementById('nav-links').style.display = 'none';
             document.getElementById('nav-controls').style.display = 'flex';
             
             document.getElementById('total-sets').innerText = totalLoops;
             
-            // Ensure proper buttons are showing
             document.getElementById('main-pause-btn').style.display = 'inline-flex';
             document.getElementById('main-done-btn').style.display = 'none';
             
@@ -530,17 +510,11 @@
             document.getElementById('timer-section').style.display = 'none';
             document.getElementById('progress-container').style.display = 'none';
             
-            document.getElementById('nav-github').style.display = 'flex';
+            document.getElementById('nav-links').style.display = 'flex';
             document.getElementById('nav-controls').style.display = 'none';
             
             document.body.style.backgroundColor = "var(--bg-color)";
-            
-            // Properly label the button based on whether we are finished or just paused
-            if(workoutSessionActive) {
-                document.getElementById('btn-start').innerText = "RESUME WORKOUT";
-            } else {
-                document.getElementById('btn-start').innerText = "START WORKOUT";
-            }
+            document.getElementById('btn-start').innerText = workoutSessionActive ? "RESUME WORKOUT" : "START WORKOUT";
         }
 
         function resetWorkout() {
@@ -580,7 +554,8 @@
             timeLeft--;
             updateProgressBar();
 
-            if (timeLeft > 0 && timeLeft <= 3) playBeep(500, 0.25); 
+            // Beep at 5, 4, 3, 2, 1 (Low Pitch Base = 440)
+            if (timeLeft > 0 && timeLeft <= 5) playBeep(440, 0.25); 
 
             if (timeLeft <= 0) {
                 currentTrackIndex++;
@@ -595,7 +570,8 @@
                     }
                 }
                 
-                playBeep(700, 0.4);
+                // Track Change Beep (High Pitch Base = 880)
+                playBeep(880, 0.4);
                 loadTrack();
             } else {
                 document.getElementById('timer-display').innerText = formatTime(timeLeft);
@@ -632,10 +608,6 @@
             document.getElementById('progress-bar').style.width = '100%';
             document.body.style.backgroundColor = "var(--primary)";
             
-            document.getElementById('nav-controls').style.display = 'none';
-            document.getElementById('nav-github').style.display = 'flex';
-            
-            // Swap controls row buttons (hide pause, show 'Back to Setup')
             document.getElementById('main-pause-btn').style.display = 'none';
             document.getElementById('main-done-btn').style.display = 'inline-flex';
             
